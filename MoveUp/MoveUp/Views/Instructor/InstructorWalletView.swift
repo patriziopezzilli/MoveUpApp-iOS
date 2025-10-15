@@ -83,6 +83,31 @@ struct InstructorWalletView: View {
                 .cornerRadius(12)
                 .padding(.horizontal, MoveUpSpacing.large)
                 
+                // Transparency Message
+                HStack(spacing: 12) {
+                    Image(systemName: "heart.fill")
+                        .font(.title3)
+                        .foregroundColor(Color.moveUpPrimary)
+                    
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text("100% Trasparenza")
+                            .font(MoveUpFont.body())
+                            .fontWeight(.semibold)
+                            .foregroundColor(Color.moveUpTextPrimary)
+                        
+                        Text("MoveUp non trattiene commissioni. Solo Stripe applica una fee standard del 1.5% + €0.25 per transazione.")
+                            .font(MoveUpFont.caption())
+                            .foregroundColor(Color.moveUpTextSecondary)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+                    
+                    Spacer()
+                }
+                .padding()
+                .background(Color.moveUpPrimary.opacity(0.08))
+                .cornerRadius(12)
+                .padding(.horizontal, MoveUpSpacing.large)
+                
                 // Quick Actions
                 HStack(spacing: 12) {
                     Button(action: {
@@ -532,6 +557,20 @@ struct InstructorTransactionDetailView: View {
                         RoundedRectangle(cornerRadius: 16)
                             .stroke(Color.black.opacity(0.08), lineWidth: 1)
                     )
+                    
+                    // Fee Breakdown (only for earnings)
+                    if transaction.type == .earning {
+                        VStack(alignment: .leading, spacing: 12) {
+                            Text("Breakdown Pagamento")
+                                .font(MoveUpFont.subtitle())
+                                .foregroundColor(Color.moveUpTextPrimary)
+                            
+                            TransactionFeeBreakdownView(
+                                grossAmount: abs(transaction.amount),
+                                showMoveUpMessage: true
+                            )
+                        }
+                    }
                     
                     // Help
                     if transaction.type == .earning {

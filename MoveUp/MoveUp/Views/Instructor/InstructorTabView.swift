@@ -1377,6 +1377,23 @@ struct CreateLessonView: View {
                             }
                         }
                         
+                        // Fee Breakdown (real-time preview)
+                        if let priceValue = Double(price), priceValue > 0 {
+                            VStack(spacing: 12) {
+                                HStack {
+                                    Image(systemName: "info.circle.fill")
+                                        .foregroundColor(.moveUpPrimary)
+                                    Text("Quanto riceverai per questa lezione:")
+                                        .font(MoveUpFont.caption())
+                                        .foregroundColor(.moveUpTextSecondary)
+                                    Spacer()
+                                }
+                                
+                                CompactFeeBreakdownView(grossAmount: priceValue)
+                            }
+                            .transition(.opacity.combined(with: .scale))
+                        }
+                        
                         // Livello
                         VStack(alignment: .leading, spacing: 12) {
                             Label("Livello Richiesto", systemImage: "chart.bar.fill")
@@ -1475,6 +1492,7 @@ struct CreateLessonView: View {
             .background(Color.moveUpBackground)
             .navigationTitle("Nuova Lezione")
             .navigationBarTitleDisplayMode(.inline)
+            .animation(.easeInOut(duration: 0.3), value: price)
             .toolbar {
                 ToolbarItem(placement: .navigationBarLeading) {
                     Button(action: { dismiss() }) {
@@ -1646,6 +1664,23 @@ struct EditLessonView: View {
                             }
                         }
                         
+                        // Fee Breakdown (real-time preview)
+                        if let priceValue = Double(price), priceValue > 0 {
+                            VStack(spacing: 12) {
+                                HStack {
+                                    Image(systemName: "info.circle.fill")
+                                        .foregroundColor(.moveUpPrimary)
+                                    Text("Quanto riceverai per questa lezione:")
+                                        .font(MoveUpFont.caption())
+                                        .foregroundColor(.moveUpTextSecondary)
+                                    Spacer()
+                                }
+                                
+                                CompactFeeBreakdownView(grossAmount: priceValue)
+                            }
+                            .transition(.opacity.combined(with: .scale))
+                        }
+                        
                         // Stato pubblicazione
                         VStack(alignment: .leading, spacing: 12) {
                             Text("Stato Pubblicazione")
@@ -1718,6 +1753,7 @@ struct EditLessonView: View {
             .background(Color.moveUpBackground)
             .navigationTitle("Modifica Lezione")
             .navigationBarTitleDisplayMode(.inline)
+            .animation(.easeInOut(duration: 0.3), value: price)
             .toolbar {
                 ToolbarItem(placement: .navigationBarTrailing) {
                     Button("Chiudi") { dismiss() }
@@ -2567,9 +2603,38 @@ struct PricingView: View {
                             .font(MoveUpFont.subtitle())
                             .fontWeight(.bold)
                         
-                        PriceField(label: "30 minuti", price: $halfHourPrice)
-                        PriceField(label: "1 ora", price: $oneHourPrice)
-                        PriceField(label: "2 ore", price: $twoHourPrice)
+                        VStack(spacing: 20) {
+                            VStack(spacing: 12) {
+                                PriceField(label: "30 minuti", price: $halfHourPrice)
+                                
+                                if let price = Double(halfHourPrice), price > 0 {
+                                    CompactFeeBreakdownView(grossAmount: price)
+                                        .transition(.opacity.combined(with: .scale))
+                                }
+                            }
+                            
+                            Divider()
+                            
+                            VStack(spacing: 12) {
+                                PriceField(label: "1 ora", price: $oneHourPrice)
+                                
+                                if let price = Double(oneHourPrice), price > 0 {
+                                    CompactFeeBreakdownView(grossAmount: price)
+                                        .transition(.opacity.combined(with: .scale))
+                                }
+                            }
+                            
+                            Divider()
+                            
+                            VStack(spacing: 12) {
+                                PriceField(label: "2 ore", price: $twoHourPrice)
+                                
+                                if let price = Double(twoHourPrice), price > 0 {
+                                    CompactFeeBreakdownView(grossAmount: price)
+                                        .transition(.opacity.combined(with: .scale))
+                                }
+                            }
+                        }
                     }
                     .padding()
                     .background(Color.white)
@@ -2637,6 +2702,9 @@ struct PricingView: View {
             .background(Color.moveUpBackground)
             .navigationTitle("Gestisci Tariffe")
             .navigationBarTitleDisplayMode(.inline)
+            .animation(.easeInOut(duration: 0.3), value: halfHourPrice)
+            .animation(.easeInOut(duration: 0.3), value: oneHourPrice)
+            .animation(.easeInOut(duration: 0.3), value: twoHourPrice)
             .toolbar {
                 ToolbarItem(placement: .navigationBarTrailing) {
                     Button("Chiudi") { dismiss() }

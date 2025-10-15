@@ -823,8 +823,12 @@ struct CertificationsStep: View {
 struct PricingStep: View {
     @Binding var hourlyRate: String
     
+    private var rateValue: Double {
+        Double(hourlyRate) ?? 0
+    }
+    
     var body: some View {
-        VStack(spacing: 40) {
+        VStack(spacing: 32) {
             Spacer()
             
             VStack(spacing: 16) {
@@ -858,6 +862,18 @@ struct PricingStep: View {
             .background(Color.white)
             .cornerRadius(20)
             
+            // Real-time Fee Breakdown (only if rate > 0)
+            if rateValue > 0 {
+                VStack(spacing: 16) {
+                    Text("Quanto riceverai realmente:")
+                        .font(MoveUpFont.caption())
+                        .foregroundColor(.moveUpTextSecondary)
+                    
+                    CompactFeeBreakdownView(grossAmount: rateValue)
+                }
+                .transition(.opacity.combined(with: .scale))
+            }
+            
             Text("Potrai modificarla in seguito")
                 .font(MoveUpFont.caption())
                 .foregroundColor(.moveUpTextSecondary)
@@ -865,6 +881,7 @@ struct PricingStep: View {
             Spacer()
         }
         .padding()
+        .animation(.easeInOut(duration: 0.3), value: rateValue > 0)
     }
 }
 

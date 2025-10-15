@@ -1,0 +1,649 @@
+import SwiftUI
+
+struct LessonDetailView: View {
+    let lesson: Lesson
+    @Environment(\.dismiss) private var dismiss
+    @State private var showBooking = false
+    @State private var selectedDate = Date()
+    @State private var selectedTimeSlot: TimeSlot?
+    
+    // Mock instructor data - in real app would be fetched
+    private let instructor = MockDataService.shared.mockInstructors.first!
+    
+    var body: some View {
+        ScrollView {
+            VStack(alignment: .leading, spacing: MoveUpSpacing.large) {
+                // Header Image (placeholder)
+                Rectangle()
+                    .fill(LinearGradient(
+                        colors: [Color.moveUpSecondary, Color.moveUpSecondary.opacity(0.8)],
+                        startPoint: .topLeading,
+                        endPoint: .bottomTrailing
+                    ))
+                    .frame(height: 200)
+                    .overlay(
+                        VStack {
+                            Image(systemName: sportIcon(for: lesson.sport.name))
+                                .font(.system(size: 60))
+                                .foregroundColor(.white)
+                            
+                            Text(lesson.sport.name)
+                                .font(MoveUpFont.subtitle())
+                                .foregroundColor(.white)
+                        }
+                    )
+                    .cornerRadius(12)
+                
+                VStack(alignment: .leading, spacing: MoveUpSpacing.medium) {
+                    // Title and Price
+                    HStack(alignment: .top) {
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text(lesson.title)
+                                .font(MoveUpFont.title(22))
+                                .foregroundColor(Color.moveUpTextPrimary)
+                            
+                            Text("con \(instructor.bio.components(separatedBy: ".").first ?? "Istruttore")")
+                                .font(MoveUpFont.body())
+                                .foregroundColor(Color.moveUpTextSecondary)
+                        }
+                        
+                        Spacer()
+                        
+                        VStack(alignment: .trailing, spacing: 4) {
+                            Text(lesson.priceFormatted)
+                                .font(MoveUpFont.title(24))
+                                .foregroundColor(Color.moveUpAccent1)
+                            
+                            Text("per \(lesson.durationFormatted)")
+                                .font(MoveUpFont.caption())
+                                .foregroundColor(Color.moveUpTextSecondary)
+                        }
+                    }
+                    
+                    // Instructor Info
+                    HStack(spacing: MoveUpSpacing.medium) {
+                        Circle()
+                            .fill(Color.moveUpPrimary)
+                            .frame(width: 60, height: 60)
+                            .overlay(
+                                Text(instructor.userId.prefix(2).uppercased())
+                                    .font(MoveUpFont.subtitle())
+                                    .foregroundColor(.white)
+                            )
+                        
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text("Marco Trainer")
+                                .font(MoveUpFont.subtitle())
+                                .foregroundColor(Color.moveUpTextPrimary)
+                            
+                            HStack {
+                                HStack(spacing: 4) {
+                                    Image(systemName: "star.fill")
+                                        .font(.caption)
+                                        .foregroundColor(.moveUpGamification)
+                                    
+                                    Text("\(instructor.rating, specifier: "%.1f")")
+                                        .font(MoveUpFont.caption())
+                                        .foregroundColor(Color.moveUpTextSecondary)
+                                }
+                                
+                                Text("•")
+                                    .foregroundColor(Color.moveUpTextSecondary)
+                                
+                                Text("\(instructor.totalLessons) lezioni")
+                                    .font(MoveUpFont.caption())
+                                    .foregroundColor(Color.moveUpTextSecondary)
+                            }
+                        }
+                        
+                        Spacer()
+                    }
+                    .padding(MoveUpSpacing.medium)
+                    .moveUpCard()
+                    
+                    // Description
+                    VStack(alignment: .leading, spacing: MoveUpSpacing.small) {
+                        Text("Descrizione")
+                            .font(MoveUpFont.subtitle())
+                            .foregroundColor(Color.moveUpTextPrimary)
+                        
+                        Text(lesson.description)
+                            .font(MoveUpFont.body())
+                            .foregroundColor(Color.moveUpTextSecondary)
+                    }
+                    
+                    // Details
+                    VStack(spacing: MoveUpSpacing.medium) {
+                        DetailRow(
+                            icon: "location",
+                            title: "Luogo",
+                            value: lesson.location.address
+                        )
+                        
+                        DetailRow(
+                            icon: "person",
+                            title: "Livello",
+                            value: lesson.skillLevel.displayName
+                        )
+                        
+                        DetailRow(
+                            icon: "clock",
+                            title: "Durata",
+                            value: lesson.durationFormatted
+                        )
+                        
+                        if !lesson.equipment.isEmpty {
+                            DetailRow(
+                                icon: "bag",
+                                title: "Attrezzatura",
+                                value: lesson.equipment.joined(separator: ", ")
+                            )
+                        }
+                    }
+                    .padding(MoveUpSpacing.medium)
+                    .moveUpCard()
+                }
+                .padding(.horizontal, MoveUpSpacing.large)
+                
+                Spacer(minLength: 100) // Space for fixed button
+            }
+        }
+        .navigationBarTitleDisplayMode(.inline)
+        .navigationBarBackButtonHidden(true)
+        .toolbar {
+            ToolbarItem(placement: .navigationBarLeading) {
+                Button(action: { dismiss() }) {
+                    Image(systemName: "chevron.left")
+                        .foregroundColor(Color.moveUpPrimary)
+                }
+            }
+        }
+        .overlay(
+            // Fixed Bottom Button
+            VStack {
+                Spacer()
+                
+                Button("Prenota Lezione") {
+                    showBooking = true
+                }
+                .buttonStyle(MoveUpButtonStyle(
+                    backgroundColor: Color.moveUpSecondary,
+                    foregroundColor: .white
+                ))
+                .padding(.horizontal, MoveUpSpacing.large)
+                .padding(.bottom, MoveUpSpacing.large)
+                .background(
+                    LinearGradient(
+                        colors: [.clear, Color.moveUpBackground.opacity(0.9), Color.moveUpBackground],
+                        startPoint: .top,
+                        endPoint: .bottom
+                    )
+                    .frame(height: 100)
+                )
+            }
+        )
+        .sheet(isPresented: $showBooking) {
+            BookingView(
+                lesson: lesson,
+                instructor: instructor,
+                selectedDate: $selectedDate,
+                selectedTimeSlot: $selectedTimeSlot
+            )
+        }
+    }
+    
+    private func sportIcon(for sportName: String) -> String {
+        switch sportName.lowercased() {
+        case "tennis": return "tennis.racket"
+        case "calcio": return "soccerball"
+        case "nuoto": return "figure.pool.swim"
+        case "fitness": return "dumbbell.fill"
+        case "yoga": return "figure.yoga"
+        case "corsa": return "figure.run"
+        default: return "sportscourt"
+        }
+    }
+}
+
+struct DetailRow: View {
+    let icon: String
+    let title: String
+    let value: String
+    
+    var body: some View {
+        HStack(spacing: MoveUpSpacing.medium) {
+            Image(systemName: icon)
+                .font(.title3)
+                .foregroundColor(Color.moveUpSecondary)
+                .frame(width: 24)
+            
+            VStack(alignment: .leading, spacing: 2) {
+                Text(title)
+                    .font(MoveUpFont.caption())
+                    .foregroundColor(Color.moveUpTextSecondary)
+                
+                Text(value)
+                    .font(MoveUpFont.body())
+                    .foregroundColor(Color.moveUpTextPrimary)
+            }
+            
+            Spacer()
+        }
+    }
+}
+
+struct BookingView: View {
+    let lesson: Lesson
+    let instructor: Instructor
+    @Binding var selectedDate: Date
+    @Binding var selectedTimeSlot: TimeSlot?
+    
+    @Environment(\.dismiss) private var dismiss
+    @State private var showPayment = false
+    @State private var notes = ""
+    
+    private let availableTimeSlots: [TimeSlot] = [
+        TimeSlot(id: "1", startTime: "09:00", endTime: "10:00", isAvailable: true),
+        TimeSlot(id: "2", startTime: "10:30", endTime: "11:30", isAvailable: true),
+        TimeSlot(id: "3", startTime: "14:00", endTime: "15:00", isAvailable: false),
+        TimeSlot(id: "4", startTime: "15:30", endTime: "16:30", isAvailable: true),
+        TimeSlot(id: "5", startTime: "17:00", endTime: "18:00", isAvailable: true)
+    ]
+    
+    var body: some View {
+        NavigationView {
+            ScrollView {
+                VStack(alignment: .leading, spacing: MoveUpSpacing.large) {
+                    // Lesson Summary
+                    VStack(alignment: .leading, spacing: MoveUpSpacing.medium) {
+                        Text("Riepilogo Lezione")
+                            .font(MoveUpFont.subtitle())
+                            .foregroundColor(Color.moveUpTextPrimary)
+                        
+                        HStack {
+                            VStack(alignment: .leading, spacing: 4) {
+                                Text(lesson.title)
+                                    .font(MoveUpFont.body())
+                                    .foregroundColor(Color.moveUpTextPrimary)
+                                
+                                Text("con \(instructor.userId)")
+                                    .font(MoveUpFont.caption())
+                                    .foregroundColor(Color.moveUpTextSecondary)
+                            }
+                            
+                            Spacer()
+                            
+                            Text(lesson.priceFormatted)
+                                .font(MoveUpFont.subtitle())
+                                .foregroundColor(Color.moveUpAccent1)
+                        }
+                    }
+                    .padding(MoveUpSpacing.medium)
+                    .moveUpCard()
+                    
+                    // Date Selection
+                    VStack(alignment: .leading, spacing: MoveUpSpacing.medium) {
+                        Text("Seleziona Data")
+                            .font(MoveUpFont.subtitle())
+                            .foregroundColor(Color.moveUpTextPrimary)
+                        
+                        DatePicker(
+                            "Data lezione",
+                            selection: $selectedDate,
+                            in: Date()...,
+                            displayedComponents: [.date]
+                        )
+                        .datePickerStyle(GraphicalDatePickerStyle())
+                        .accentColor(Color.moveUpSecondary)
+                    }
+                    .padding(MoveUpSpacing.medium)
+                    .moveUpCard()
+                    
+                    // Time Slots
+                    VStack(alignment: .leading, spacing: MoveUpSpacing.medium) {
+                        Text("Orari Disponibili")
+                            .font(MoveUpFont.subtitle())
+                            .foregroundColor(Color.moveUpTextPrimary)
+                        
+                        LazyVGrid(columns: [
+                            GridItem(.flexible()),
+                            GridItem(.flexible())
+                        ], spacing: MoveUpSpacing.small) {
+                            ForEach(availableTimeSlots) { timeSlot in
+                                TimeSlotCard(
+                                    timeSlot: timeSlot,
+                                    isSelected: selectedTimeSlot?.id == timeSlot.id
+                                ) {
+                                    if timeSlot.isAvailable {
+                                        selectedTimeSlot = timeSlot
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    .padding(MoveUpSpacing.medium)
+                    .moveUpCard()
+                    
+                    // Notes
+                    VStack(alignment: .leading, spacing: MoveUpSpacing.small) {
+                        Text("Note aggiuntive (opzionale)")
+                            .font(MoveUpFont.subtitle())
+                            .foregroundColor(Color.moveUpTextPrimary)
+                        
+                        TextField("Scrivi eventuali richieste specifiche...", text: $notes, axis: .vertical)
+                            .lineLimit(3...5)
+                            .font(MoveUpFont.body())
+                            .padding(MoveUpSpacing.medium)
+                            .background(Color.moveUpCardBackground)
+                            .cornerRadius(12)
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 12)
+                                    .stroke(Color.gray.opacity(0.3), lineWidth: 1)
+                            )
+                    }
+                    .padding(.horizontal, MoveUpSpacing.medium)
+                }
+                .padding(.horizontal, MoveUpSpacing.large)
+                .padding(.vertical, MoveUpSpacing.medium)
+            }
+            .navigationTitle("Prenota Lezione")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .navigationBarLeading) {
+                    Button("Annulla") {
+                        dismiss()
+                    }
+                }
+                
+                ToolbarItem(placement: .navigationBarTrailing) {
+                    Button("Continua") {
+                        showPayment = true
+                    }
+                    .disabled(selectedTimeSlot == nil)
+                    .foregroundColor(selectedTimeSlot != nil ? Color.moveUpSecondary : .gray)
+                }
+            }
+        }
+        .sheet(isPresented: $showPayment) {
+            PaymentView(
+                lesson: lesson,
+                instructor: instructor,
+                selectedDate: selectedDate,
+                selectedTimeSlot: selectedTimeSlot!
+            )
+        }
+    }
+}
+
+struct TimeSlot: Identifiable {
+    let id: String
+    let startTime: String
+    let endTime: String
+    let isAvailable: Bool
+    
+    var displayTime: String {
+        "\(startTime) - \(endTime)"
+    }
+}
+
+struct TimeSlotCard: View {
+    let timeSlot: TimeSlot
+    let isSelected: Bool
+    let action: () -> Void
+    
+    var body: some View {
+        Button(action: action) {
+            Text(timeSlot.displayTime)
+                .font(MoveUpFont.body())
+                .foregroundColor(
+                    timeSlot.isAvailable ? 
+                        (isSelected ? .white : Color.moveUpTextPrimary) : 
+                        .gray
+                )
+                .padding(MoveUpSpacing.medium)
+                .frame(maxWidth: .infinity)
+                .background(
+                    timeSlot.isAvailable ? 
+                        (isSelected ? Color.moveUpSecondary : Color.moveUpCardBackground) :
+                        .gray.opacity(0.2)
+                )
+                .cornerRadius(8)
+                .overlay(
+                    RoundedRectangle(cornerRadius: 8)
+                        .stroke(
+                            timeSlot.isAvailable ? 
+                                (isSelected ? .clear : Color.moveUpSecondary.opacity(0.3)) : 
+                                .clear,
+                            lineWidth: 1
+                        )
+                )
+        }
+        .buttonStyle(PlainButtonStyle())
+        .disabled(!timeSlot.isAvailable)
+    }
+}
+
+struct PaymentView: View {
+    let lesson: Lesson
+    let selectedDate: Date
+    let selectedTimeSlot: TimeSlot
+    let notes: String
+    
+    @Environment(\.dismiss) private var dismiss
+    @State private var isProcessing = false
+    @State private var paymentSuccess = false
+    
+    var body: some View {
+        NavigationView {
+            VStack(spacing: MoveUpSpacing.large) {
+                if paymentSuccess {
+                    PaymentSuccessView()
+                } else {
+                    PaymentFormView(
+                        lesson: lesson,
+                        selectedDate: selectedDate,
+                        selectedTimeSlot: selectedTimeSlot,
+                        notes: notes,
+                        isProcessing: $isProcessing
+                    ) {
+                        processPayment()
+                    }
+                }
+            }
+            .navigationTitle(paymentSuccess ? "Prenotazione Confermata" : "Pagamento")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                if !paymentSuccess {
+                    ToolbarItem(placement: .navigationBarLeading) {
+                        Button("Indietro") {
+                            dismiss()
+                        }
+                    }
+                }
+            }
+        }
+    }
+    
+    private func processPayment() {
+        isProcessing = true
+        
+        // Simulate payment processing
+        DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
+            isProcessing = false
+            withAnimation {
+                paymentSuccess = true
+            }
+            
+            // Track analytics
+            AnalyticsHelper.shared.trackUserAction(.lessonBooked(
+                lessonId: lesson.id,
+                instructorId: lesson.instructorId
+            ))
+        }
+    }
+}
+
+struct PaymentFormView: View {
+    let lesson: Lesson
+    let selectedDate: Date
+    let selectedTimeSlot: TimeSlot
+    let notes: String
+    @Binding var isProcessing: Bool
+    let onPayment: () -> Void
+    
+    var body: some View {
+        ScrollView {
+            VStack(alignment: .leading, spacing: MoveUpSpacing.large) {
+                // Booking Summary
+                VStack(alignment: .leading, spacing: MoveUpSpacing.medium) {
+                    Text("Riepilogo Prenotazione")
+                        .font(MoveUpFont.subtitle())
+                        .foregroundColor(Color.moveUpTextPrimary)
+                    
+                    VStack(spacing: MoveUpSpacing.small) {
+                        SummaryRow(title: "Lezione", value: lesson.title)
+                        SummaryRow(title: "Data", value: selectedDate.formatted())
+                        SummaryRow(title: "Orario", value: selectedTimeSlot.displayTime)
+                        SummaryRow(title: "Durata", value: lesson.durationFormatted)
+                        
+                        Divider()
+                        
+                        SummaryRow(
+                            title: "Totale",
+                            value: lesson.priceFormatted,
+                            isTotal: true
+                        )
+                    }
+                }
+                .padding(MoveUpSpacing.medium)
+                .moveUpCard()
+                
+                // Payment Info
+                VStack(alignment: .leading, spacing: MoveUpSpacing.small) {
+                    Text("Informazioni di Pagamento")
+                        .font(MoveUpFont.subtitle())
+                        .foregroundColor(Color.moveUpTextPrimary)
+                    
+                    Text("Il pagamento sarà autorizzato ma addebitato solo dopo il completamento della lezione.")
+                        .font(MoveUpFont.caption())
+                        .foregroundColor(Color.moveUpTextSecondary)
+                        .padding(MoveUpSpacing.small)
+                        .background(Color.moveUpAccent2.opacity(0.1))
+                        .cornerRadius(8)
+                }
+                
+                // Mock Payment Form
+                VStack(spacing: MoveUpSpacing.medium) {
+                    Text("💳 Metodo di pagamento simulato")
+                        .font(MoveUpFont.body())
+                        .foregroundColor(Color.moveUpTextSecondary)
+                        .frame(maxWidth: .infinity)
+                        .padding(MoveUpSpacing.large)
+                        .background(Color.moveUpCardBackground)
+                        .cornerRadius(12)
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 12)
+                                .stroke(Color.gray.opacity(0.3), lineWidth: 1)
+                        )
+                }
+                
+                Spacer()
+                
+                // Payment Button
+                Button(action: onPayment) {
+                    HStack {
+                        if isProcessing {
+                            ProgressView()
+                                .progressViewStyle(CircularProgressViewStyle(tint: .white))
+                                .scaleEffect(0.8)
+                        }
+                        
+                        Text(isProcessing ? "Elaborazione..." : "Conferma e Paga \(lesson.priceFormatted)")
+                            .font(MoveUpFont.button())
+                    }
+                }
+                .buttonStyle(MoveUpButtonStyle(
+                    backgroundColor: Color.moveUpAccent2,
+                    foregroundColor: .white
+                ))
+                .disabled(isProcessing)
+            }
+            .padding(.horizontal, MoveUpSpacing.large)
+        }
+    }
+}
+
+struct SummaryRow: View {
+    let title: String
+    let value: String
+    var isTotal: Bool = false
+    
+    var body: some View {
+        HStack {
+            Text(title)
+                .font(isTotal ? MoveUpFont.subtitle() : MoveUpFont.body())
+                .foregroundColor(Color.moveUpTextPrimary)
+            
+            Spacer()
+            
+            Text(value)
+                .font(isTotal ? MoveUpFont.subtitle() : MoveUpFont.body())
+                .foregroundColor(isTotal ? Color.moveUpAccent1 : Color.moveUpTextSecondary)
+        }
+    }
+}
+
+struct PaymentSuccessView: View {
+    @Environment(\.dismiss) private var dismiss
+    
+    var body: some View {
+        VStack(spacing: MoveUpSpacing.large) {
+            Spacer()
+            
+            Image(systemName: "checkmark.circle.fill")
+                .font(.system(size: 80))
+                .foregroundColor(Color.moveUpSuccess)
+            
+            VStack(spacing: MoveUpSpacing.small) {
+                Text("Prenotazione Confermata!")
+                    .font(MoveUpFont.title())
+                    .foregroundColor(Color.moveUpTextPrimary)
+                
+                Text("Riceverai una notifica di conferma dall'istruttore entro 24 ore.")
+                    .font(MoveUpFont.body())
+                    .foregroundColor(Color.moveUpTextSecondary)
+                    .multilineTextAlignment(.center)
+            }
+            
+            Spacer()
+            
+            VStack(spacing: MoveUpSpacing.medium) {
+                Button("Visualizza Prenotazioni") {
+                    // Navigate to bookings
+                    dismiss()
+                }
+                .buttonStyle(MoveUpButtonStyle(
+                    backgroundColor: Color.moveUpSecondary,
+                    foregroundColor: .white
+                ))
+                
+                Button("Torna alla Home") {
+                    dismiss()
+                }
+                .buttonStyle(MoveUpSecondaryButtonStyle(
+                    borderColor: Color.moveUpSecondary,
+                    foregroundColor: Color.moveUpSecondary
+                ))
+            }
+        }
+        .padding(.horizontal, MoveUpSpacing.large)
+    }
+}
+
+struct LessonDetailView_Previews: PreviewProvider {
+    static var previews: some View {
+        NavigationView {
+            LessonDetailView(lesson: MockDataService.shared.mockLessons.first!)
+        }
+    }
+}
